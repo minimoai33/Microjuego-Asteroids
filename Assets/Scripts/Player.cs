@@ -1,5 +1,7 @@
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class Player : MonoBehaviour
 {
@@ -8,38 +10,87 @@ public class Player : MonoBehaviour
 
     public float rotationSpeed = 120f;//Factor de Giro
 
-    //Variables para que las balas salgan de la nave 
-    public GameObject gun, bulletPrefab; //Spawner de balas(gun)
+    public GameObject gun, bulletPrefab; //Spawner de balas(gun), y prefab de las balas
 
     private Rigidbody _rigid;
 
+    //Límites de la cámara
+    private float limitePorLaDerecha, limitePorLaIzquierda, limitePorArriba, limitePorAbajo; //Límites de la camara
+
+    //Elementos de la interfaz de pausa
+    public GameObject reanudar, pause, reinicio;
+
     public static int SCORE = 0;//Variable compartida de puntuación del jugador
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    
     void Start()
     {
         _rigid = GetComponent<Rigidbody>();
+
+        //Ocultamos los elementos de la pantalla de pausa al comenzar la partida
+        reanudar.SetActive(false);
+        pause.SetActive(false);
+        reinicio.SetActive(false);
+
+        //Asigna las funciones a los botones de la interfaz
+        Button reanudador = reanudar.GetComponent<Button>();
+        reanudador.onClick.AddListener(Continuar);
+
+        Button reiniciador = reinicio.GetComponent<Button>();
+        reiniciador.onClick.AddListener(ComenzarDeCero);
     }
 
-    // Update is called once per frame
+    
     void Update()
     {
+        //Detectamos el movimiento hacia delante o hacia atrás
         float rotation = Input.GetAxis("Horizontal")*Time.deltaTime;
-
-        float thrust = Input.GetAxis("Vertical")*Time.deltaTime;//Para programar el movimiento de nuestra nave a este valor empuje la detección del movimiento cuando el usuario interactua con nuestro juego (Teclado o Mando) 
-        //GetAxis asigna a teclas acciones mediante etiquetas Vertical sería como pulsar w y s
+        float thrust = Input.GetAxis("Vertical")*Time.deltaTime;
+        
 
         //Tenemos la nave inicialmente alineada hacia la derecha
-
         Vector3 thrustDirection = transform.right;
 
         _rigid.AddForce(thrustDirection * thrust * thrustForce);//Direccion*Decisión si hacia alante o atrás*fuerza de empuje
 
         transform.Rotate(Vector3.forward, -rotation*rotationSpeed);//Vector sobre el que se aplica el giro y angulo de giro.
-        //DeltaTime = numero que establece el tiempo que hay entre dos frames consecutivos precalculados por el motor de esta manera se ajusta a la velocidad de frames de nuestra tarjeta gráfica
+        
 
-        //Cambiamos de signo rotation para que gire a donde debe girar a izq y d derecha
+        limitePorArriba = Camera.main.transform.position.y + Camera.main.orthographicSize; //Limite Superior sumando la posición de nuestra camara en el eje Y y la distancia desde la mitad hacia arriba de esta.(para poder compararlo con los ejes de la nave)
 
+        limitePorAbajo = Camera.main.transform.position.y - Camera.main.orthographicSize; //Limite Inferior sumando la posición de nuestra camara en el eje Y y la distancia desde la mitad hacia abajo de esta.(para poder compararlo con los ejes de la nave)
+
+        limitePorLaDerecha = Camera.main.transform.position.x + (Camera.main.orthographicSize*Camera.main.aspect); //Limite por la derecha sumando la posición de nuestra camara en el eje X y la distancia desde la mitad hacia la derecha de esta.(para poder compararlo con los ejes de la nave)
+
+        limitePorLaIzquierda = Camera.main.transform.position.x - (Camera.main.orthographicSize*Camera.main.aspect); //Limite por la izquierda sumando la posición de nuestra camara en el eje X y la distancia desde la mitad hacia la izquierda de esta.(para poder compararlo con los ejes de la nave)
+
+        if (transform.position.x > limitePorLaDerecha) //Si la nave sobrepasa el límite por derecha intercambiamos su posición al inicio del límite por izquierda
+        {
+            SetTransformX(limitePorLaIzquierda);
+        }else if (transform.position.x < limitePorLaIzquierda) //Si la nave sobrepasa el límite por izquierda intercambiamos su posición al inicio del límite por derecha
+        {
+            SetTransformX(limitePorLaDerecha);
+        }else if (transform.position.y > limitePorArriba) //Si la nave sobrepasa el límite superior intercambiamos su posición al inicio del límite inferior
+        {
+            SetTransformY(limitePorAbajo);
+        }else if (transform.position.y < limitePorAbajo) //Si la nave sobrepasa el límite inferior intercambiamos su posición al inicio del límite superior
+        {
+            SetTransformY(limitePorArriba);
+        }
+
+
+
+        void SetTransformX(float n) //Función para cambiar la posición de la nave en el eje X
+        {
+            transform.position = new Vector3(n, transform.position.y, transform.position.z);
+        }
+
+        void SetTransformY(float n) //Función para cambiar la posición de la nave en el eje Y
+        {
+            transform.position = new Vector3(transform.position.x, n, transform.position.z);
+        }
+
+        //Modifica el comportamiento de las balas(KeyCode.Space tecla espacio)
         if (Input.GetKeyDown(KeyCode.Space)) {
 
             GameObject bullet = Instantiate(bulletPrefab, gun.transform.position,Quaternion.identity);//Instancio un nuevo objeto de tipo bala si pulso el espacio
@@ -50,7 +101,15 @@ public class Player : MonoBehaviour
 
             balaScript.targetVector = transform.right;//Vector al que está asociada la nave
 
-        }  //Modifica el comportamiento de las balas(KeyCode.Space tecla espacio)
+        }  
+
+        //Si pulsas esc se para el juego y te vas a la pantalla de menú
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Time.timeScale = 0f;
+            activarPausa();
+
+        }
 
     }
     //Función que se encarga de obtener la información cuando este objeto colisiona (la nave)
@@ -68,11 +127,35 @@ public class Player : MonoBehaviour
             Debug.Log("He colisionado con otra cosa....");
         }
 
-        //Queremos que cuando colisione la nave con un asteroide reiniciemos la partida
-        //SceneManager gestiona las escenas dentro de mi juego
-        //Con LoadScene podemos cargar cualquier otra escena o nivel de nuestro juego(por ejemplo pasar de un nivel a otro)
     }
 
-    //Con atravesamientos o con triggers, la función con la que se trabaja es con OnTriggerEnter
-    //Es trigguer si marcamos la opción trigger en el collider
+    
+    //Continua la partida y oculta el menú de pausa
+    void Continuar()
+    {
+        pause.SetActive(false);
+        reanudar.SetActive(false);
+        reinicio.SetActive(false);
+        Time.timeScale = 1f;
+    }
+
+    //Reinicia la partida desde el principio
+    void ComenzarDeCero()
+    {
+        pause.SetActive(false);
+        reanudar.SetActive(false);
+        reinicio.SetActive(false);
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+
+
+    }
+
+    //Muestra el menú de pausa
+    void activarPausa()
+    {
+        pause.SetActive(true);
+        reanudar.SetActive(true);
+        reinicio.SetActive(true);
+    }
 }

@@ -4,21 +4,21 @@ using UnityEngine.UI;
 public class Bullet : MonoBehaviour
 {
 
-    public float speed = 10f;
+    public float speed = 10f;//Velocidad de la bala
 
-    public float maxLifeTime = 3f;
+    public float maxLifeTime = 3f;//Tiempo máximo de vida de la bala
     public Vector3 targetVector;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    
     void Start()
     {
         Destroy(gameObject, maxLifeTime); //Esta función nos permite decirle a unity que objeto queremos destruir(incluso se puede establecer un cronómetro de cuando se debe destruir ese objeto)
     }                        //GameObject en este caso somos nosotros mismos 
 
-    // Update is called once per frame
+    
     void Update()
     {
-        transform.Translate(speed*targetVector*Time.deltaTime); //Modifica el componente transform en lo que es el posicionamiento del objeto(Lo estamos teletransportando)
+        transform.Translate(speed*targetVector*Time.deltaTime); //Modifica el componente transform en lo que es el posicionamiento del objeto
     } //El target vector se asegura que la dirección en la que corre la bala está alineada con la nave
 
     private void OnCollisionEnter(Collision collision) //Gestiona la colisión entre la bala y el asteroide

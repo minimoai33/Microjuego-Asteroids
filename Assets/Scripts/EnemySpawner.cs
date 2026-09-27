@@ -6,19 +6,19 @@ public class NewMonoBehaviourScript : MonoBehaviour
 
     public float spawnRatePerMinute = 30f;//Ratio de asteroides por minuto
 
-    public float spawnRateIncrement = 1f;//Para que vaya aumentando el número de asteroides
+    public float spawnRateIncrement = 1f;//Incremento de la frecuencia de aparición
 
     public float spawnNext = 0;
 
     public float maxTimeLife = 4f;
 
-    public float xlimit; //Variable pa jugar con nuestros límites del escenario(Se editará en unity)
+    public float xlimit; //Límite de aparición en el ejeX
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    
     
     //Start borrado porque no va a hacer falta
 
-    // Update is called once per frame
+
     void Update()
     {
         //Aquí gestionaremos nuestro generador de asteroides
@@ -33,11 +33,9 @@ public class NewMonoBehaviourScript : MonoBehaviour
 
             float rand = Random.Range(-xlimit,xlimit);
 
-            Vector2 spawnPosition = new Vector2(rand , 8f); //Posición respecto a lo que tengamos en nuestra escena 
+            Vector2 spawnPosition = new Vector2(rand , 8f); //Posición en la que vamos a spawnear
 
-            GameObject meteor = Instantiate(asteroidPrefab, spawnPosition, Quaternion.identity); //Posición en la que vamos a spawnear sin ningún  giro
-
-            //Hay dos formas de decidir donde vamos a spawnear, lo podemos asociar a un GameObject vacío dentro de la escena y obtener su componente transform y de ahí lo generamos o directamente podemos decirle donde queremos que lo genere creando nuestro propio vector de posición
+            GameObject meteor = Instantiate(asteroidPrefab, spawnPosition, Quaternion.identity); 
 
             Destroy(meteor,maxTimeLife);//Tiempo de autodestrucción del meteorito pa que la escena no se llene de basura
         }
